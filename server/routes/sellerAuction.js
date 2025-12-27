@@ -8,15 +8,28 @@ const User = require('../models/User');
 
 // Create auction (seller protected)
 router.post('/create', authSeller, async (req, res) => {
-    const { title, description, imageUrl, startingBid, endTime } = req.body;
+    const { title, description, imageUrl, images, startingBid, endTime } = req.body;
     if (!title || !description || !startingBid || !endTime) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
+
+    // Ensure images is an array
+    let imageArray = images || [];
+    // If imageUrl is provided but not in images array, add it? 
+    // Or if only imageUrl provided, make it the first image.
+    if (imageUrl && imageArray.length === 0) {
+        imageArray = [imageUrl];
+    }
+
+    // Backward compatibility: Ensure imageUrl is set (use first image)
+    const mainImage = imageUrl || (imageArray.length > 0 ? imageArray[0] : '');
+
     try {
         const auction = new Auction({
             title,
             description,
-            imageUrl,
+            imageUrl: mainImage,
+            images: imageArray,
             startingBid,
             currentBid: startingBid,
             endTime,

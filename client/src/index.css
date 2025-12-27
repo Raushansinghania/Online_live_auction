@@ -175,13 +175,19 @@
   background: rgba(6, 182, 212, 0.5);
 }
 
-/* Light Mode Styles - High Contrast */
+/* Light Mode Styles - Ivory Background + High Contrast Accents */
 .light-mode body {
-  background-color: #f8fafc;
-  /* Slate 50 */
-  color: #020617;
-  /* Slate 950 - almost black */
-  background-image: none;
+  background-color: #FFFFF0;
+  /* Ivory */
+  color: #0f172a;
+  /* Slate 900 */
+  /* Subtle "image-like" pattern using radial gradients */
+  background-image:
+    radial-gradient(at 0% 0%, rgba(255, 228, 196, 0.3) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(255, 218, 185, 0.3) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(255, 228, 196, 0.3) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(255, 218, 185, 0.3) 0px, transparent 50%);
+  background-attachment: fixed;
 }
 
 .light-mode h1,
@@ -215,24 +221,22 @@
 .light-mode .input-primary {
   background-color: #ffffff;
   border-color: #94a3b8;
-  /* Slate 400 - darker border */
   color: #020617;
 }
 
 .light-mode .input-primary::placeholder {
   color: #64748b;
-  /* Slate 500 - darker placeholder */
 }
 
 .light-mode .input-primary:focus {
   border-color: #0891b2;
-  /* Cyan 600 - darker cyan */
+  /* Cyan 600 */
   ring-color: #0891b2;
 }
 
 .light-mode .text-slate-400 {
   color: #475569;
-  /* Slate 600 - much darker than 400 */
+  /* Slate 600 */
 }
 
 .light-mode .text-slate-300 {
@@ -244,8 +248,92 @@
   color: #64748b;
 }
 
+/* Hardcoded text-white override */
+.light-mode .text-white {
+  color: #0f172a;
+  /* Slate 900 */
+}
+
+.light-mode .text-slate-200 {
+  color: #1e293b;
+  /* Slate 800 */
+}
+
+/* Hover white override */
+.light-mode .hover\:text-white:hover {
+  color: #0f172a;
+}
+
+/* Background Opacity Overrides */
+.light-mode .bg-white\/5,
+.light-mode .bg-white\/10,
+.light-mode .bg-white\/[0.03],
+.light-mode .bg-white\/[0.05],
+.light-mode .bg-white\/[0.08] {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.light-mode .hover\:bg-white\/10:hover,
+.light-mode .hover\:bg-white\/[0.08]:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Border Overrides */
+.light-mode .border-white\/10,
+.light-mode .border-white\/20,
+.light-mode .border-white\/[0.05],
+.light-mode .border-white\/[0.08] {
+  border-color: #cbd5e1;
+  /* Slate 300 */
+}
+
+/* Specific component fixes */
 .light-mode .bg-slate-900 {
-  background-color: #f8fafc;
+  background-color: #FFFFF0;
+  /* Ivory */
+  border: none;
+}
+
+/* Fix gradients on light mode */
+.light-mode .bg-clip-text.text-transparent {
+  filter: brightness(0.9);
+}
+
+/* Gradient Stop Overrides for Light Mode */
+.light-mode .from-white {
+  --tw-gradient-from: #0f172a;
+  /* Slate 900 */
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(15, 23, 42, 0));
+}
+
+.light-mode .to-white {
+  --tw-gradient-to: #0f172a;
+}
+
+.light-mode .via-cyan-100 {
+  --tw-gradient-via: #0891b2;
+  /* Cyan 600 */
+  --tw-gradient-stops: var(--tw-gradient-from), #0891b2, var(--tw-gradient-to, rgba(8, 145, 178, 0));
+}
+
+/* Ensure glass inputs are visible */
+.light-mode input,
+.light-mode textarea,
+.light-mode select {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.light-mode input::placeholder,
+.light-mode textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Fix gradients on light mode */
+.light-mode .bg-clip-text.text-transparent {
+  /* Make gradients slightly darker/richer */
+  filter: brightness(0.9);
 }
 
 /* Blob Animation for Background */

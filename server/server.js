@@ -14,6 +14,7 @@ const notificationRoutes = require('./routes/notifications');
 const paymentRoutes = require('./routes/payments');
 const bidRoutes = require('./routes/bids');
 const userRoutes = require('./routes/users');
+const reviewRoutes = require('./routes/reviews');
 const Auction = require('./models/Auction');
 
 const app = express();
@@ -71,6 +72,7 @@ app.use('/api/seller/notifications', notificationRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/bids', bidRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 io.on('connection', (socket) => {
     console.log('A user connected');

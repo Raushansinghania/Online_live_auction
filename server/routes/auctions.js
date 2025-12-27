@@ -10,7 +10,7 @@ const { closeExpiredAuctions } = require('../utils/auctionUtils');
 // GET all active auctions with filters
 router.get("/", async (req, res) => {
     try {
-        const { search, minPrice, maxPrice, status } = req.query;
+        const { search, minPrice, maxPrice, status, category, sort } = req.query;
         let query = {};
 
         // Search in title or description
@@ -27,6 +27,11 @@ router.get("/", async (req, res) => {
             query.status = status;
         }
 
+        // Category filter
+        if (category && category !== 'All') {
+            query.category = category;
+        }
+
         // Price range filter
         if (minPrice || maxPrice) {
             query.currentBid = {};
@@ -34,7 +39,12 @@ router.get("/", async (req, res) => {
             if (maxPrice) query.currentBid.$lte = Number(maxPrice);
         }
 
-        const auctions = await Auction.find(query).sort({ createdAt: -1 });
+        let sortOption = { createdAt: -1 };
+        if (sort === 'price_asc') sortOption = { currentBid: 1 };
+        if (sort === 'price_desc') sortOption = { currentBid: -1 };
+        if (sort === 'ending_soon') sortOption = { endTime: 1 };
+
+        const auctions = await Auction.find(query).sort(sortOption);
         res.json(auctions);
     } catch (err) {
         console.error("Fetch auctions error:", err);
@@ -105,6 +115,29 @@ router.post('/bid', auth, async (req, res) => {
             amount: numericAmount,
             timestamp: new Date()
         });
+
+        // Notify previous winner
+        if (auction.winner) {
+            const previousWinner = await User.findById(auction.winner);
+            if (previousWinner && previousWinner._id.toString() !== user._id.toString()) {
+                const { sendEmail } = require('../utils/emailService');
+                // Don't await this to avoid blocking the bid response
+                sendEmail(
+                    previousWinner.email,
+                    `Outbid Alert: ${auction.title}`,
+                    `<p>You have been outbid on <b>${auction.title}</b>. The new current bid is $${numericAmount}. <a href="http://localhost:5173/auction/${auction._id}">Bid again now!</a></p>`
+                ).catch(console.error);
+
+                // Also create internal notification for outbid
+                const Notification = require('../models/Notification');
+                await Notification.create({
+                    userId: previousWinner._id,
+                    auctionId: auction._id,
+                    type: "outbid",
+                    message: `You were outbid on ${auction.title}!`
+                });
+            }
+        }
 
         await bid.save();
 

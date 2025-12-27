@@ -47,6 +47,18 @@ async function closeExpiredAuctions(io = null) {
                         type: "auction_won",
                         message: `You won the auction for ${auction.title}!`
                     });
+
+                    // Send Email
+                    const User = require('../models/User'); // Lazy load to avoid circular dependency if any
+                    const { sendEmail } = require('./emailService');
+                    const winnerUser = await User.findById(highestBid.userId);
+                    if (winnerUser) {
+                        await sendEmail(
+                            winnerUser.email,
+                            `You Won: ${auction.title}`,
+                            `<h1>Congratulations!</h1><p>You have won the auction for <b>${auction.title}</b> with a bid of $${highestBid.amount}.</p>`
+                        );
+                    }
                 }
             } else {
                 console.log(`[AUCTION_bg] No bids found for ${auction._id}`);

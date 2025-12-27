@@ -22,7 +22,8 @@ const SellerDashboard = () => {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
-        imageUrl: '',
+        images: '', // Changed to allow multiple
+        category: 'Other', // Added category
         startingBid: '',
         endTime: ''
     });
@@ -64,8 +65,13 @@ const SellerDashboard = () => {
 
         try {
             const token = getSellerToken();
+            // Split images by comma or newline and filter empty
+            const imageArray = formData.images.split(/[\n,]+/).map(url => url.trim()).filter(url => url.length > 0);
+
             await axios.post('http://localhost:3001/api/auction/seller/create', {
                 ...formData,
+                images: imageArray,
+                imageUrl: imageArray[0] || '', // First image as main
                 startingBid: parseFloat(formData.startingBid)
             }, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -73,7 +79,9 @@ const SellerDashboard = () => {
 
             showToast('Auction created successfully', 'success');
             setShowCreateForm(false);
-            setFormData({ title: '', description: '', imageUrl: '', startingBid: '', endTime: '' });
+            showToast('Auction created successfully', 'success');
+            setShowCreateForm(false);
+            setFormData({ title: '', description: '', images: '', category: 'Other', startingBid: '', endTime: '' });
             fetchAuctions();
         } catch (error) {
             console.error('Error creating auction:', error);
@@ -268,13 +276,25 @@ const SellerDashboard = () => {
                             </div>
 
                             <div>
-                                <label className="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Image URL</label>
-                                <input
-                                    type="url"
-                                    value={formData.imageUrl}
-                                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                                    className="input-primary focus:border-purple-400"
-                                    placeholder="https://..."
+                                <label className="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Category</label>
+                                <select
+                                    value={formData.category}
+                                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                    className="input-primary focus:border-purple-400 appearance-none cursor-pointer"
+                                >
+                                    {['Electronics', 'Fashion', 'Home', 'Art', 'Vehicles', 'Collectibles', 'Other'].map(c => (
+                                        <option key={c} value={c} className="bg-slate-900 text-slate-300">{c}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-slate-300 text-xs font-semibold uppercase tracking-widest mb-2">Image URLs (One per line)</label>
+                                <textarea
+                                    value={formData.images}
+                                    onChange={(e) => setFormData({ ...formData, images: e.target.value })}
+                                    className="input-primary focus:border-purple-400 min-h-[100px] resize-none font-mono text-xs"
+                                    placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
                                 />
                             </div>
 

@@ -6,6 +6,9 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import Countdown from './Countdown';
 import AuctionStatusBadge from './AuctionStatusBadge';
+import ImageCarousel from './ImageCarousel';
+
+import { LuHeart, LuShare2 } from 'react-icons/lu';
 
 const socket = io('http://localhost:3001');
 
@@ -18,6 +21,7 @@ const AuctionDetail = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
     const [bidding, setBidding] = useState(false);
+    const [isInWatchlist, setIsInWatchlist] = useState(false);
     const [bidAnimation, setBidAnimation] = useState(false);
     const bidDisplayRef = useRef(null);
 
@@ -59,6 +63,23 @@ const AuctionDetail = () => {
             socket.off('bid-update');
         };
     }, [id]);
+
+    useEffect(() => {
+        const checkWatchlist = async () => {
+            if (user) {
+                try {
+                    const res = await axios.get('http://localhost:3001/api/users/watchlist', {
+                        headers: { 'x-auth-token': localStorage.getItem('token') }
+                    });
+                    const isWatched = res.data.some(item => item._id === id || item === id);
+                    setIsInWatchlist(isWatched);
+                } catch (err) {
+                    console.error("Error checking watchlist", err);
+                }
+            }
+        };
+        checkWatchlist();
+    }, [id, user]);
 
     const validateBid = () => {
         if (!bidAmount || bidAmount.toString().trim() === '') {
@@ -118,6 +139,60 @@ const AuctionDetail = () => {
         setAuction(prev => ({ ...prev, status: 'closed' }));
     };
 
+    const toggleWatchlist = async () => {
+        if (!user) {
+            showToast("Please login to add to watchlist", "error");
+            return;
+        }
+        try {
+            const token = localStorage.getItem('token');
+            const config = { headers: { 'x-auth-token': token } };
+
+            if (isInWatchlist) {
+                await axios.delete(`http://localhost:3001/api/users/watchlist/${id}`, config);
+                setIsInWatchlist(false);
+                showToast("Removed from watchlist", "info");
+            } else {
+                await axios.post(`http://localhost:3001/api/users/watchlist/${id}`, {}, config);
+                setIsInWatchlist(true);
+                showToast("Added to watchlist", "success");
+            }
+        } catch (error) {
+            console.error(error);
+            showToast("Failed to update watchlist", "error");
+        }
+    };
+
+    const handleShare = async () => {
+        const shareData = {
+            title: auction.title,
+            text: `Check out this ${auction.title} on LuxBid!`,
+            url: window.location.href,
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                console.log('Error sharing', err);
+                // Fallback to clipboard if share fails (e.g., user cancelled or not allowed)
+                try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    showToast("Link copied to clipboard!", "success");
+                } catch (clipboardErr) {
+                    showToast("Failed to copy link", "error");
+                }
+            }
+        } else {
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                showToast("Link copied to clipboard!", "success");
+            } catch (err) {
+                showToast("Failed to copy link", "error");
+            }
+        }
+    };
+
     if (loading) return (
         <div className="flex items-center justify-center min-h-[60vh]">
             <div className="w-16 h-16 border-4 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin"></div>
@@ -135,21 +210,48 @@ const AuctionDetail = () => {
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pt-24 pb-12">
+            {/* Left Column */}
             <div className="space-y-8 animate-slide-in-left">
-                <div className="relative rounded-2xl overflow-hidden glass-premium p-1 group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                    <img src={auction.imageUrl} alt={auction.title} className="w-full h-full object-cover rounded-xl transform group-hover:scale-105 transition-transform duration-700" />
-                    <div className="absolute top-4 right-4">
+                {/* Image Carousel */}
+                <div className="relative rounded-2xl overflow-hidden glass-premium p-1 group h-[400px] lg:h-[500px]">
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+                    <ImageCarousel
+                        images={auction.images && auction.images.length > 0 ? auction.images : [auction.imageUrl]}
+                        title={auction.title}
+                    />
+
+                    <div className="absolute top-4 right-4 z-10">
                         <AuctionStatusBadge status={auction.status} endTime={auction.endTime} />
                     </div>
+
                     {!isEnded && (
-                        <div className="absolute top-4 left-4">
+                        <div className="absolute top-4 left-4 z-10">
                             <span className="bg-black/60 backdrop-blur-md text-cyan-400 font-bold px-4 py-2 rounded-full border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.4)] animate-pulse flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
                                 LIVE AUCTION
                             </span>
                         </div>
                     )}
+                </div>
+
+                {/* Seller Info */}
+                <div className="glass-card flex items-center justify-between p-6">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl font-bold text-white">
+                            {typeof auction.seller === 'object' ? (auction.seller.sellername?.charAt(0).toUpperCase() || 'S') : 'S'}
+                        </div>
+                        <div>
+                            <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Seller</p>
+                            <Link to={`/seller/view/${typeof auction.seller === 'object' ? auction.seller._id : auction.seller}`} className="text-white font-medium hover:text-cyan-400 transition-colors flex items-center gap-2">
+                                {typeof auction.seller === 'object' ? (auction.seller.sellername || 'Verified Seller') : 'View Seller Profile'}
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                            </Link>
+                        </div>
+                    </div>
+                    {/* Could add seller rating here if available */}
                 </div>
 
                 {/* Bid History */}
@@ -183,11 +285,32 @@ const AuctionDetail = () => {
                 </div>
             </div>
 
-            <div className="space-y-8 animate-slide-in-right delay-200 opacity-0">
+            {/* Right Column */}
+            <div className="space-y-8 animate-slide-in-right delay-200 opacity-0" style={{ animationFillMode: 'forwards' }}>
                 <div>
-                    <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 mb-6 font-['Outfit'] drop-shadow-lg leading-tight">
-                        {auction.title}
-                    </h1>
+                    <div className="flex justify-between items-start">
+                        <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 mb-6 font-['Outfit'] drop-shadow-lg leading-tight">
+                            {auction.title}
+                        </h1>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={toggleWatchlist}
+                                className={`p-3 rounded-xl border transition-all ${isInWatchlist
+                                    ? 'bg-red-500/20 border-red-500 text-red-400'
+                                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10'}`}
+                                title={isInWatchlist ? "Remove from Watchlist" : "Add to Watchlist"}
+                            >
+                                <LuHeart className={`w-6 h-6 ${isInWatchlist ? 'fill-current' : ''}`} />
+                            </button>
+                            <button
+                                onClick={handleShare}
+                                className="p-3 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/30 transition-all"
+                                title="Share Auction"
+                            >
+                                <LuShare2 className="w-6 h-6" />
+                            </button>
+                        </div>
+                    </div>
                     <p className="text-lg text-slate-400 leading-relaxed font-light border-l-2 border-cyan-500/30 pl-6">
                         {auction.description}
                     </p>

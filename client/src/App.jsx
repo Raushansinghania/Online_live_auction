@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { AuthProvider } from './context/AuthContext';
 import { SellerAuthProvider } from './context/SellerAuthContext';
 import { ToastProvider } from './context/ToastContext';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 
 // Components
 import Navbar from './components/Navbar';
@@ -20,7 +20,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import MyBids from './pages/MyBids';
+import Watchlist from './pages/Watchlist';
 import PaymentPage from './pages/PaymentPage';
+import SellerPublicProfile from './pages/SellerPublicProfile';
 import NotFound from './pages/NotFound';
 
 // Seller Pages
@@ -30,12 +32,24 @@ import SellerDashboard from './pages/seller/SellerDashboard';
 import SellerProfile from './pages/seller/SellerProfile';
 
 const AppContent = () => {
-    const location = useLocation();
+    const { isDark } = useTheme();
     const isLandingPage = location.pathname === '/';
 
     return (
-        <div className={`min-h-screen bg-slate-900 ${isLandingPage ? '' : 'pt-20'} relative`}>
-            {isLandingPage ? <AnimatedBackground /> : <ThreeBackground />}
+        <div className={`min-h-screen ${isLandingPage ? '' : 'pt-20'} relative transition-colors duration-300`}>
+            {/* 
+                Show AnimatedBackground on Landing Page (Dark Mode only is typical, but user might want it everywhere. 
+                For now, let's keep Animated one strict or update it too? 
+                User asked for "this same background" (ThreeBackground) for light theme.
+                So we enable ThreeBackground for non-landing pages regardless of theme.
+            */}
+            {/* 
+                Persistent ThreeBackground to maintain WebGL context.
+                AnimatedBackground overlays it on Landing Page (Dark Mode).
+            */}
+            <ThreeBackground />
+            {isLandingPage && isDark && <AnimatedBackground />}
+
             <Navbar />
             <main className={`${isLandingPage ? '' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'} relative z-10`}>
                 <Routes>
@@ -47,7 +61,9 @@ const AppContent = () => {
                     <Route path="/register" element={<Register />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/my-bids" element={<MyBids />} />
+                    <Route path="/watchlist" element={<Watchlist />} />
                     <Route path="/payments" element={<PaymentPage />} />
+                    <Route path="/seller/view/:id" element={<SellerPublicProfile />} />
 
                     {/* Seller Routes */}
                     <Route path="/seller/login" element={<SellerLogin />} />

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import {
     LuGavel,
+    LuHeart,
     LuLayoutDashboard,
     LuTrendingUp,
     LuLogOut,
@@ -69,6 +70,11 @@ const Navbar = () => {
                                         <NavLink to="/my-bids" current={location.pathname} icon={<LuTrendingUp className="w-4 h-4" />}>
                                             My Bids
                                         </NavLink>
+                                        <NavLink to="/watchlist" current={location.pathname} icon={<LuHeart className="w-4 h-4" />}>
+                                            Watchlist
+                                        </NavLink>
+
+
 
                                         <div className="flex items-center gap-4 ml-6 pl-6 border-l border-white/[0.1]">
                                             <div className="flex items-center gap-3">

@@ -17,6 +17,7 @@ const auth = (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         req.userId = decoded.id;  // Attach userId for route access
+        req.user = { id: decoded.id }; // Attach req.user object for compatibility
         next();
     } catch (error) {
         return res.status(401).json({ error: 'Please authenticate.' });
